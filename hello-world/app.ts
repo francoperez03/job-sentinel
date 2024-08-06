@@ -1,4 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { fetchNetworks } from './services/networks.service';
 
 /**
  *
@@ -12,11 +13,12 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
+        console.log('-------START------');
+        const networks = await fetchNetworks();
+        console.log({ networks });
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                message: 'hello world',
-            }),
+            body: JSON.stringify(networks),
         };
     } catch (err) {
         console.log(err);
