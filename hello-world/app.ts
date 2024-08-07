@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { NetworkService } from './services/networks.service';
+import { JobService } from './services/jobs.services';
 
 /**
  *
@@ -14,14 +14,14 @@ import { NetworkService } from './services/networks.service';
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         console.log('-------START------');
-        const networkService = new NetworkService();
-        const networks = await networkService.fetchNetworks();
-        console.log({ networks });
+        const jobService = new JobService(10);
+        const jobs = await jobService.checkInactiveJobs();
+        console.log({ jobs });
         console.log('-------END------');
 
         return {
             statusCode: 200,
-            body: JSON.stringify(networks),
+            body: JSON.stringify(jobs),
         };
     } catch (err) {
         console.log(err);

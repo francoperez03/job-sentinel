@@ -4,7 +4,7 @@ import { sequencerAbi } from '../abis/sequencer.abi';
 import { Window } from '../types';
 import { ethers, Contract } from 'ethers';
 
-export class NetworkService {
+export class NetworkProvider {
 
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
@@ -16,7 +16,6 @@ export class NetworkService {
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
   }
   public async fetchNetworks(): Promise<string[]> {
-    console.log('============')
     const numNetworks = await this.sequencerContract.numNetworks();
 
     const networks: string[] = [];
@@ -25,13 +24,17 @@ export class NetworkService {
       console.log({i})
 
       const network = await this.sequencerContract.networkAt(i);
-      console.log({ network });
 
       networks.push(network);
     }
-    console.log({ networks });
 
     return networks;
+  }
+
+  public async getMaster(): Promise<string> {
+    const masterNetwork = await this.sequencerContract.getMaster();
+    
+    return masterNetwork;
   }
 
   public async getWindow(network: string): Promise<Window> {

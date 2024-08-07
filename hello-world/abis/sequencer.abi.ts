@@ -1,4 +1,6 @@
-export const sequencerAbi = [
+import { InterfaceAbi } from "ethers";
+
+export const sequencerAbi: InterfaceAbi = [
     { inputs: [], stateMutability: 'nonpayable', type: 'constructor' },
     {
         inputs: [
