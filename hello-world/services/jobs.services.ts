@@ -19,7 +19,7 @@ export class JobService {
     this.batchSize = batchSize;
   }
 
-  private async checkWorkableJobs(masterNetwork: string) {
+  private async getWorkableJobs(masterNetwork: string) {
     const jobAddresses = await this.jobProvider.fetchJobs();
     let jobs: string[] = []
     for (const jobAddress of jobAddresses) {
