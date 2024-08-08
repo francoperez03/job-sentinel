@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { JobService } from './services/jobs.services';
+import { JobService } from './services/jobs.service';
 
 /**
  *

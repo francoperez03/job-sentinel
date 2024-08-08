@@ -1,7 +1,7 @@
 // src/services/sequencerService.ts
 
-import { JobProvider } from "../providers/jobs.providers";
-import { NetworkProvider } from "../providers/networks.providers";
+import { JobProvider } from "../providers/jobs.provider";
+import { NetworkProvider } from "../providers/networks.provider";
 import { Job, JobState } from "../types";
 
 const BLOCK_LIMITS = 10;
