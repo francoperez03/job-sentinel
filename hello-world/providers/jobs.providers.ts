@@ -38,14 +38,22 @@ export class JobProvider {
     let canWork = false;
     try{
       const jobContract = new ethers.Contract(jobAddress, jobAbi, this.provider);
-      const numJobs = await this.sequencerContract.numJobs();
-      console.log({numJobs})
       const result = await jobContract.workable(network);
-      console.log({result})
+      return result;
     } catch(error){
       console.log((error as Error).message)
     }
 
     return canWork
+  }
+
+  public async getCurrentBlock(): Promise<number> {
+    try {
+      const blockNumber = await this.provider.getBlockNumber();
+      return blockNumber;
+    } catch (error) {
+      console.log('error retrieving block:', (error as Error).message);
+      throw error;
+    }
   }
 }

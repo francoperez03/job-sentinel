@@ -8,3 +8,9 @@ export interface Window {
     start: number;
     length: number;
 }
+
+export interface JobState {
+  lastChangeBlock: number;
+  currentState: boolean;
+}
+

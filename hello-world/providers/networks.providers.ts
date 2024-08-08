@@ -33,7 +33,6 @@ export class NetworkProvider {
 
   public async getMaster(): Promise<string> {
     const masterNetwork = await this.sequencerContract.getMaster();
-    
     return masterNetwork;
   }
 
