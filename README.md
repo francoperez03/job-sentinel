@@ -65,11 +65,27 @@ Package the project into a ZIP file for deployment to AWS Lambda:
 zip -r deployment.zip .
 ```
 
-### Deployment
+## Running Locally with AWS SAM
+To test the Lambda function locally using AWS SAM, follow these steps:
 
-Use the AWS CLI to deploy the Lambda function:
+### Build the SAM Application:
 
-aws lambda update-function-code --function-name <Your_Function_Name> --zip-file fileb://deployment.zip
+Run the following command to build the SAM application:
+
+```bash
+sam build
+```
+
+### Invoke the Lambda Function:
+
+After building the application, you can invoke the Lambda function using the following script:
+
+```bash
+npm run check:job
+```
+This command will invoke the function with a predefined event and display the results in your terminal.
+
+That's it! With these two commands, you can build and test your Lambda function locally.
 
 
 ## Testing
