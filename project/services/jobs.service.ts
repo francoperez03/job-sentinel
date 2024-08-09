@@ -23,13 +23,13 @@ export class JobService {
   }
 
   public async checkInactiveJobs() {
-    const masterNetwork = await this.networkProvider.getMaster();
+    const networks = await this.networkProvider.fetchNetworks();
 
-    if (!masterNetwork) {
+    if (!networks) {
       console.log('There isnt master netowrk');
       return;
     }
-    const workableJobs = await this.jobProvider.getWorkableJobs(masterNetwork);
+    const workableJobs = await this.jobProvider.getWorkableJobs(networks);
 
     const currentBlock: number = await this.jobProvider.getCurrentBlock()
     for (const job of workableJobs) {

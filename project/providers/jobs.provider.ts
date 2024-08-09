@@ -56,25 +56,34 @@ export class JobProvider {
     return parseInt(numJobs);
   }
 
-  public async getWorkableJobs(masterNetwork: string): Promise<string[]> {
+  public async getWorkableJobs(networks: string[]): Promise<string[]> {
     const jobAddresses = await this.fetchJobs();
-    const jobPromises = jobAddresses.map(async (jobAddress) => {
-      return this.checkIsWorkable(masterNetwork, jobAddress).then(([canWork, args]) => ({
-        jobAddress,
-        canWork,
-      }));
-    });
+    const jobPromises: Promise<{ jobAddress: string; network: string; canWork: boolean; }>[] = [];
+
+    for (const jobAddress of jobAddresses) {
+      for (const network of networks) {
+        const promise = this.checkIsWorkable(network, jobAddress).then(([canWork, args]) => {
+          return {
+            jobAddress,
+            network,
+            canWork,
+          };
+        });
+        jobPromises.push(promise);
+      }
+    }
+
     const results = await Promise.allSettled(jobPromises);
-    const jobs = results.reduce<any[]>((acc, result, index) => {
-      if (result.status === FULFILLED && result.value) {
-        acc.push({jobAddress:jobAddresses[index], canWork: result.value.canWork});
+    const jobs = results.reduce<any[]>((acc, result) => {
+      if (result.status === FULFILLED && result.value && result.value.canWork) {
+        acc.push(result.value);
       } else if (result.status === REJECTED) {
-        console.error(`Error checking job. Job: ${result.reason.jobAddress}: ${result.reason.message}`);
+        console.error(`Error checking job. Network: ${result.reason.network}, Job: ${result.reason.jobAddress}: ${result.reason.message}`);
       }
       return acc;
     }, []);
     return jobs;
-  }
+}
 
   public async getCurrentBlock(): Promise<number> {
     try {
