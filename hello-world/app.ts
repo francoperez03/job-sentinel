@@ -16,7 +16,6 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         console.log('-------START------');
         const jobService = new JobService(10);
         const jobs = await jobService.checkInactiveJobs();
-        console.log({ jobs });
         console.log('-------END------');
 
         return {

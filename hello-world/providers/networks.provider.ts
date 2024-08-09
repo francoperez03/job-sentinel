@@ -21,10 +21,7 @@ export class NetworkProvider {
     const networks: string[] = [];
 
     for (let i = 0; i < numNetworks; i++) {
-      console.log({i})
-
       const network = await this.sequencerContract.networkAt(i);
-
       networks.push(network);
     }
 
