@@ -40,17 +40,6 @@ Run the following command to install the necessary dependencies:
 npm install
 ```
 
-
-## Local Execution
-
-You can run the Lambda function locally using `ts-node`:
-
-```bash
-npx ts-node app.ts
-```
-
-This will simulate an invocation of the Lambda function and output the result to the console.
-
 ## Deployment to AWS Lambda
 
 ### Compile and Package
@@ -86,7 +75,7 @@ npm run check:job
 ```
 This command will invoke the function with a predefined event and display the results in your terminal.
 
-That's it! With these two commands, you can build and test your Lambda function locally.
+That's it! With these commands, you can build and test your Lambda function locally.
 
 
 ## Testing
