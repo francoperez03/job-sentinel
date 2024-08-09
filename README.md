@@ -81,6 +81,7 @@ sam build
 After building the application, you can invoke the Lambda function using the following script:
 
 ```bash
+cd project
 npm run check:job
 ```
 This command will invoke the function with a predefined event and display the results in your terminal.
