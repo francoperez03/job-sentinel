@@ -1,25 +1,26 @@
 // src/services/sequencerService.ts
 
-import { DiscordProvider } from "../providers/discord.provider";
+import { Service, Inject } from "typedi";
 import { JobProvider } from "../providers/jobs.provider";
 import { NetworkProvider } from "../providers/networks.provider";
-import { Job, JobState } from "../types";
+import { JobState } from "../types";
+import { NotificationProvider } from "../interfaces/notificacion.interface";
 
 const BLOCKS_LIMIT = 10;
+@Service()
 export class JobService {
 
   private jobProvider: JobProvider;
   private networkProvider: NetworkProvider;
-  private discordProvider: DiscordProvider;
-  private batchSize: number;
   private jobStates: Record<string, JobState> = {};
 
 
-  constructor(batchSize: number){
+  constructor(
+    @Inject("DiscordProvider")
+    private discordProvider: NotificationProvider
+  ){
     this.jobProvider = new JobProvider();
     this.networkProvider = new NetworkProvider();
-    this.discordProvider = new DiscordProvider();
-    this.batchSize = batchSize;
   }
 
   public async checkInactiveJobs() {

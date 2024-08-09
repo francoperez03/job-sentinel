@@ -1,5 +1,9 @@
+import 'reflect-metadata';
+import Container from 'typedi';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { JobService } from './services/jobs.service';
+import setupProviders from './providers';
+
 
 /**
  *
@@ -14,7 +18,10 @@ import { JobService } from './services/jobs.service';
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         console.log('-------START------');
-        const jobService = new JobService(10);
+        await setupProviders();
+
+        const jobService: JobService = Container.get(JobService);
+
         const jobs = await jobService.checkInactiveJobs();
         console.log('-------END------');
 

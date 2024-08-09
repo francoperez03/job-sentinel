@@ -3,9 +3,11 @@
 import { sequencerAbi } from '../abis/sequencer.abi';
 import { ethers, Contract, hexlify } from 'ethers';
 import { jobAbi } from '../abis/job.abi';
+import { Service } from 'typedi';
 
 const FULFILLED = 'fulfilled'
 const REJECTED = 'rejected'
+@Service()
 export class JobProvider {
 
   private provider: ethers.JsonRpcProvider;

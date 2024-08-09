@@ -1,7 +1,11 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { Service } from 'typedi';
+import { NotificationProvider } from '../interfaces/notificacion.interface';
 dotenv.config();
-export class DiscordProvider {
+
+@Service()
+export class DiscordProvider implements NotificationProvider {
   private webhookUrl: string;
 
   constructor() {

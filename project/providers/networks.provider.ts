@@ -1,9 +1,11 @@
 // src/services/sequencerService.ts
 
+import { Service } from 'typedi';
 import { sequencerAbi } from '../abis/sequencer.abi';
 import { Window } from '../types';
 import { ethers, Contract } from 'ethers';
 
+@Service()
 export class NetworkProvider {
 
   private provider: ethers.JsonRpcProvider;
