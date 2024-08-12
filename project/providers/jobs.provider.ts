@@ -4,6 +4,7 @@ import { sequencerAbi } from '../abis/sequencer.abi';
 import { jobAbi } from '../abis/job.abi';
 import { Job, JobState } from '../types';
 import { IJobProvider } from '../interfaces/providers.interface';
+import logger from '../logger';
 
 const FULFILLED = 'fulfilled';
 const REJECTED = 'rejected';
@@ -36,7 +37,7 @@ export class JobProvider implements IJobProvider {
       [canWork, args] = await jobContract.workable(network);
       return [canWork, args];
     } catch (error) {
-      console.error(`Error checking if job ${jobAddress} is workable on network ${network}:`, (error as Error).message);
+      logger.error(`Error checking if job ${jobAddress} is workable on network ${network}:`, (error as Error).message);
       return [false, null];
     }
   }
@@ -54,7 +55,7 @@ export class JobProvider implements IJobProvider {
       if (result.status === FULFILLED && result.value) {
         acc.push(result.value);
       } else if (result.status === REJECTED) {
-        console.error(`Error checking job. Job: ${result.reason.jobAddress}: ${result.reason.message}`);
+        logger.error(`Error checking job. Job: ${result.reason.jobAddress}: ${result.reason.message}`);
       }
       return acc;
     }, []);
@@ -105,15 +106,23 @@ export class JobProvider implements IJobProvider {
     await this.redisClient.set(jobKey, JSON.stringify(state));
   }
 
-  public async getJobState(network: string, jobAddress: string): Promise<JobState> {
-    const jobKey = `${jobAddress}-${network}`;
-    const cachedState = await this.redisClient.get(jobKey);
-    if (cachedState) {
-      return JSON.parse(cachedState);
+  public async getJobState(network: string, jobAddress: string) {
+    try {
+      const jobKey = `${jobAddress}-${network}`;
+      const cachedState = await this.redisClient.get(jobKey);
+      if (cachedState) {
+        logger.info(`Cache hit for job state ${jobKey}`);
+        return JSON.parse(cachedState);
+      }
+      logger.info(`Cache miss for job state ${jobKey}`);
+      const blockNumber = await this.getCurrentBlock();
+      const jobState = { lastChangeBlock: blockNumber, wasWorkable: false };
+      await this.redisClient.setex(jobKey, 600, JSON.stringify(jobState)); // TTL de 10 minutos
+      logger.info(`Job state cached for ${jobKey}`, jobState);
+      return jobState;
+    } catch (error) {
+      logger.error(`Error retrieving job state for ${jobAddress} on network ${network}`, error);
+      throw error;
     }
-    const blockNumber = await this.provider.getBlockNumber();
-    const initialState = { lastChangeBlock: blockNumber, wasWorkable: false };
-    await this.setJobState(network, jobAddress, initialState);
-    return initialState;
   }
 }

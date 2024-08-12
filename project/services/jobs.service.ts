@@ -1,5 +1,5 @@
-// src/services/jobs.service.ts
-
+// src/services/import ogger from '../logger';jobs.service.ts
+import logger from '../logger';
 import { Job, JobState, JobStates } from "../types";
 import { IJobProvider, INetworkProvider, INotificationProvider } from "../interfaces/providers.interface";
 
@@ -35,9 +35,10 @@ export class JobService {
  * @return A list of jobs that were checked during the execution.
  */
   public async checkInactiveJobs() {
+    logger.info('Fetching networks...');
     const networks = await this.networkProvider.fetchNetworks();
     if (!networks || networks.length === 0) {
-      console.log('Networks not found');
+      logger.warn('No networks found');
       return;
     }
 
@@ -54,25 +55,27 @@ export class JobService {
         relevantNetworks.push(network);
       }
     }
-
+    logger.info('Fetching workable jobs...');
     const workableJobs: Job[] = await this.jobProvider.getWorkableJobs(relevantNetworks);
-
+    logger.info(`Checking inactive jobs at block ${currentBlock}`, { workableJobs });
     for (const job of workableJobs) {
       const jobState: JobState = await this.jobProvider.getJobState(job.network, job.jobAddress)
 
       if (job.canWork && !jobState.wasWorkable) {
         jobState.lastChangeBlock = currentBlock;
         jobState.wasWorkable = true;
+        logger.info(`Job ${job.jobAddress} on network ${job.network} became workable at block ${currentBlock}`);
       }
 
       if (job.canWork && jobState.wasWorkable && (currentBlock - jobState.lastChangeBlock) >= BLOCKS_LIMIT) {
         await this.notificationProvider.sendNotification(`Job ${job.jobAddress} has been inactive for 10 blocks in network ${job.network}`);
-        console.log('Send discord notification');
+        logger.info(`Notification sent for job ${job.jobAddress} on network ${job.network}`);
       }
 
       if (!job.canWork && jobState.wasWorkable) {
         jobState.wasWorkable = false;
         jobState.lastChangeBlock = currentBlock;
+        logger.info(`Job ${job.jobAddress} on network ${job.network} became unworkable at block ${currentBlock}`);
       }
       await this.jobProvider.setJobState(job.network, job.jobAddress, jobState)
     }
