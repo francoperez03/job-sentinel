@@ -56,11 +56,11 @@ describe('JobProvider', () => {
   });
 
   it('should check if a job is workable correctly', async () => {
-    mockJobContract.workable.mockResolvedValueOnce([true]);
+    mockJobContract.workable.mockResolvedValueOnce([true, 'args']);
 
     const result = await jobProvider['checkIsWorkable']('network1', 'job1');
 
-    expect(result).toEqual([true]);
+    expect(result).toEqual([true, 'args']);
     expect(mockJobContract.workable).toHaveBeenCalledWith('network1');
   });
 

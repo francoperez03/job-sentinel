@@ -1,37 +1,32 @@
-// src/services/sequencerService.ts
-
 import { sequencerAbi } from '../abis/sequencer.abi';
 import { ethers, Contract, hexlify } from 'ethers';
 import { jobAbi } from '../abis/job.abi';
 import { Job } from '../types';
 import { IJobProvider } from '../interfaces/providers.interface';
 
-const FULFILLED = 'fulfilled'
-const REJECTED = 'rejected'
+const FULFILLED = 'fulfilled';
+const REJECTED = 'rejected';
 export class JobProvider implements IJobProvider {
 
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
 
-  constructor(){
+  constructor() {
     const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
     const sequencerAddress = process.env.SEQUENCER_ADDRESS || 'default';
-    console.log({sequecentaADddre: process.env.DISCORD_WEBHOOK_URL})
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
   }
 
-  private async checkIsWorkable(network: string, jobAddress: string){
-    let canWork = false;
-    try{
+  private async checkIsWorkable(network: string, jobAddress: string): Promise<[boolean, string | null]> {
+    try {
       const jobContract = new ethers.Contract(jobAddress, jobAbi, this.provider);
-      const result = await jobContract.workable(network);
-
-      return result;
-    } catch(error){
-      console.log((error as Error).message)
+      const [canWork, args] = await jobContract.workable(network);
+      return [canWork, args];
+    } catch (error) {
+      console.error(`Error checking if job ${jobAddress} is workable on network ${network}:`, (error as Error).message);
+      return [false, null];
     }
-    return [canWork, null]
   }
 
   public async fetchJobs(): Promise<string[]> {
@@ -81,7 +76,7 @@ export class JobProvider implements IJobProvider {
       return acc;
     }, []);
     return jobs;
-}
+  }
 
   public async getCurrentBlock(): Promise<number> {
     try {

@@ -17,7 +17,6 @@ export class JobService {
 
   public async checkInactiveJobs() {
     const networks = await this.networkProvider.fetchNetworks();
-    console.log({ networks });
     if (!networks) {
       console.log('Networks not found');
       return;
@@ -31,7 +30,6 @@ export class JobService {
         jobState.lastChangeBlock = currentBlock;
         jobState.wasWorkable = true;
       }
-      console.log({job})
       if (job.canWork && jobState.wasWorkable && (currentBlock - jobState.lastChangeBlock) >= BLOCKS_LIMIT) {
         await this.notificationProvider.sendNotification(`Job ${job.jobAddress} has been inactive for 10 blocks in network ${job.network}`);
         console.log('Send discord notification');
