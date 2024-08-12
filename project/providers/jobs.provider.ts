@@ -3,12 +3,12 @@
 import { sequencerAbi } from '../abis/sequencer.abi';
 import { ethers, Contract, hexlify } from 'ethers';
 import { jobAbi } from '../abis/job.abi';
-import { Service } from 'typedi';
+import { Job } from '../types';
+import { IJobProvider } from '../interfaces/providers.interface';
 
 const FULFILLED = 'fulfilled'
 const REJECTED = 'rejected'
-@Service()
-export class JobProvider {
+export class JobProvider implements IJobProvider {
 
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
@@ -25,11 +25,12 @@ export class JobProvider {
     try{
       const jobContract = new ethers.Contract(jobAddress, jobAbi, this.provider);
       const result = await jobContract.workable(network);
+
       return result;
     } catch(error){
       console.log((error as Error).message)
     }
-    return canWork
+    return [canWork, null]
   }
 
   public async fetchJobs(): Promise<string[]> {
@@ -53,12 +54,7 @@ export class JobProvider {
     return jobs;
   }
 
-  public async getNumberOfJobs(): Promise<number> {
-    const numJobs = await this.sequencerContract.numJobs();
-    return parseInt(numJobs);
-  }
-
-  public async getWorkableJobs(networks: string[]): Promise<string[]> {
+  public async getWorkableJobs(networks: string[]): Promise<Job[]> {
     const jobAddresses = await this.fetchJobs();
     const jobPromises: Promise<{ jobAddress: string; network: string; canWork: boolean; }>[] = [];
 

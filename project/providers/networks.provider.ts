@@ -1,11 +1,7 @@
-// src/services/sequencerService.ts
-
-import { Service } from 'typedi';
 import { sequencerAbi } from '../abis/sequencer.abi';
 import { Window } from '../types';
 import { ethers, Contract } from 'ethers';
 
-@Service()
 export class NetworkProvider {
 
   private provider: ethers.JsonRpcProvider;
@@ -45,7 +41,6 @@ export class NetworkProvider {
 
   public async getTotalWindowSize(): Promise<number> {
     const totalWindowSize = await this.sequencerContract.totalWindowSize();
-    console.log({ totalWindowSize });
     return totalWindowSize;
   }
 }

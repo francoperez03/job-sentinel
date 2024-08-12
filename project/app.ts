@@ -1,27 +1,12 @@
-import 'reflect-metadata';
-import Container from 'typedi';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { JobService } from './services/jobs.service';
-import setupProviders from './providers';
-
-
-/**
- *
- * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
- * @param {Object} event - API Gateway Lambda Proxy Input Format
- *
- * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
- * @returns {Object} object - API Gateway Lambda Proxy Output Format
- *
- */
+import setupProviders from './providers'
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         console.log('-------START------');
-        await setupProviders();
-
-        const jobService: JobService = Container.get(JobService);
-
+        const { networkProvider, jobProvider, notificationProvider} = await setupProviders()
+        const jobService = new JobService(networkProvider, jobProvider, notificationProvider)
         const jobs = await jobService.checkInactiveJobs();
         console.log('-------END------');
 

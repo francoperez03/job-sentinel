@@ -1,45 +1,36 @@
-// src/services/sequencerService.ts
+// src/services/jobs.service.ts
 
-import { Service, Inject } from "typedi";
-import { JobProvider } from "../providers/jobs.provider";
-import { NetworkProvider } from "../providers/networks.provider";
-import { JobState } from "../types";
-import { NotificationProvider } from "../interfaces/notificacion.interface";
+import { JobStates } from "../types";
+import { IJobProvider, INetworkProvider, INotificationProvider } from "../interfaces/providers.interface";
 
 const BLOCKS_LIMIT = 10;
-@Service()
+
 export class JobService {
 
-  private jobProvider: JobProvider;
-  private networkProvider: NetworkProvider;
-  private jobStates: Record<string, JobState> = {};
-
+  private jobStates: JobStates = {};
 
   constructor(
-    @Inject("DiscordProvider")
-    private discordProvider: NotificationProvider
-  ){
-    this.jobProvider = new JobProvider();
-    this.networkProvider = new NetworkProvider();
-  }
+    private networkProvider: INetworkProvider,
+    private jobProvider: IJobProvider,
+    private notificationProvider: INotificationProvider,
+  ) {}
 
   public async checkInactiveJobs() {
     const networks = await this.networkProvider.fetchNetworks();
-
+    console.log({ networks });
     if (!networks) {
-      console.log('There isnt master netowrk');
+      console.log('Networks not found');
       return;
     }
     const workableJobs = await this.jobProvider.getWorkableJobs(networks);
-
-    const currentBlock: number = await this.jobProvider.getCurrentBlock()
+    const currentBlock: number = await this.jobProvider.getCurrentBlock();
     for (const job of workableJobs) {
-      const JobInactivityState = this.jobStates[job] || { lastChangeBlock: currentBlock, currentState: false };
-      if(JobInactivityState.lastChangeBlock && (currentBlock - JobInactivityState.lastChangeBlock) >= BLOCKS_LIMIT) {
-        this.discordProvider.sendNotification(job);
-        console.log('Send discord notification')
+      const JobInactivityState = this.jobStates[job.jobAddress] || { lastChangeBlock: currentBlock, currentState: false };
+      if (JobInactivityState.lastChangeBlock && (currentBlock - JobInactivityState.lastChangeBlock) >= BLOCKS_LIMIT) {
+        await this.notificationProvider.sendNotification(`Job ${job.jobAddress} has been inactive for 10 blocks in network ${job.network}`);
+        console.log('Send discord notification');
       }
     }
-    return workableJobs
+    return workableJobs;
   }
 }

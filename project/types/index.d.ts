@@ -1,7 +1,7 @@
 export interface Job {
     jobAddress: string;
     canWork: boolean;
-    args: string;
+    network: string;
 }
 
 export interface Window {
@@ -14,3 +14,6 @@ export interface JobState {
   currentState: boolean;
 }
 
+export interface JobStates {
+  [jobAddress: string]: JobState;
+}
