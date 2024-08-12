@@ -1,4 +1,4 @@
-# Automation Workable Alert
+# Job Sentinel
 
 ## Description
 
@@ -83,10 +83,3 @@ This project includes a set of unit tests for key functionalities. You can run t
 ```bash
 npm test
 ```
-
-## Future Improvements
-
-- **RPC Call Optimization**: Although batching is used, further optimizations could be implemented.
-- **Multi-Network Support**: Extend the logic to support checking multiple networks in parallel.
-- **Enhanced Testing**: Expand unit test coverage and include integration tests.
-
