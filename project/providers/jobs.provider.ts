@@ -12,14 +12,18 @@ export class JobProvider implements IJobProvider {
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
   private redisClient: Redis;
+  private readonly REDIS_HOST = 'my-redis';
+  private readonly REDIS_PORT = 6379;
 
   constructor() {
     const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
     const sequencerAddress = process.env.SEQUENCER_ADDRESS || '0x238b4E35dAed6100C6162fAE4510261f88996EC9';
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
-    this.redisClient = new Redis(redisUrl);
+    this.redisClient = new Redis({
+      host: this.REDIS_HOST,
+      port: this.REDIS_PORT
+    });
   }
 
   private async checkIsWorkable(network: string, jobAddress: string): Promise<[boolean, string | null]> {

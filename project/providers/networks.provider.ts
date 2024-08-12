@@ -9,6 +9,8 @@ export class NetworkProvider {
   private sequencerContract: Contract;
   private redisClient: Redis;
   private readonly CACHE_TTL = 600;
+  private readonly REDIS_HOST = 'my-redis';
+  private readonly REDIS_PORT = 6379;
 
   constructor() {
     const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
@@ -16,8 +18,10 @@ export class NetworkProvider {
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
 
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    this.redisClient = new Redis(redisUrl);
+    this.redisClient = new Redis({
+      host: this.REDIS_HOST,
+      port: this.REDIS_PORT
+    });
   }
 
   public async fetchNetworks(): Promise<string[]> {
