@@ -11,7 +11,7 @@ export interface Window {
 
 export interface JobState {
   lastChangeBlock: number;
-  currentState: boolean;
+  wasWorkable: boolean;
 }
 
 export interface JobStates {

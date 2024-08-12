@@ -1,0 +1,11 @@
+{
+  "version": "0",
+  "id": "e1e15bde-f5a8-4565-a7c8-fb0a7d7c9c26",
+  "detail-type": "Check incative jobs Event",
+  "source": "aws.events",
+  "account": "123456789012",
+  "time": "2024-08-07T01:23:45Z",
+  "region": "us-east-1",
+  "resources": ["arn:aws:events:us-east-1:123456789012:rule/ExampleRule"],
+  "detail": {}
+}

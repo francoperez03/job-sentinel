@@ -6,10 +6,11 @@ export class NetworkProvider {
 
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
+  private networksCache: string[] | null = null;
 
   constructor(){
-    const providerUrl = process.env.INFURA_URL || 'https://rpc.ankr.com/eth';
-    const sequencerAddress = process.env.SEQUENCER_ADDRESS || '0x238b4E35dAed6100C6162fAE4510261f88996EC9';
+    const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
+    const sequencerAddress = process.env.SEQUENCER_ADDRESS || 'default';
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
   }

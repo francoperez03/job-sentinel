@@ -15,7 +15,8 @@ export class JobProvider implements IJobProvider {
 
   constructor(){
     const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
-    const sequencerAddress = process.env.SEQUENCER_ADDRESS || '0x238b4E35dAed6100C6162fAE4510261f88996EC9';
+    const sequencerAddress = process.env.SEQUENCER_ADDRESS || 'default';
+    console.log({sequecentaADddre: process.env.DISCORD_WEBHOOK_URL})
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
   }
@@ -36,7 +37,6 @@ export class JobProvider implements IJobProvider {
   public async fetchJobs(): Promise<string[]> {
     const numJobs = await this.sequencerContract.numJobs();
     const jobPromises: Promise<string>[] = [];
-
 
     for (let i = 0; i < numJobs; i++) {
       jobPromises.push(this.sequencerContract.jobAt(i));
