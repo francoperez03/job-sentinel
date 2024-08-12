@@ -51,19 +51,6 @@ To stop the Redis server and remove the containers, use:
 docker-compose down
 ```
 
-## Deployment to AWS Lambda
-
-### Compile and Package
-
-Compile the TypeScript code to JavaScript:
-```bash
-npm run build
-```
-
-Package the project into a ZIP file for deployment to AWS Lambda:
-```bash
-zip -r deployment.zip .
-```
 
 ## Running Locally with AWS SAM
 To test the Lambda function locally using AWS SAM, follow these steps:
