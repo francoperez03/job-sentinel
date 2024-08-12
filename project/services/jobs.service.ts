@@ -11,7 +11,7 @@ export class JobService {
     private networkProvider: INetworkProvider,
     private jobProvider: IJobProvider,
     private notificationProvider: INotificationProvider,
-  ) {}
+  ) { }
 
   /**
  * @title JobService
@@ -34,50 +34,50 @@ export class JobService {
  * 
  * @return A list of jobs that were checked during the execution.
  */
-public async checkInactiveJobs() {
-  const networks = await this.networkProvider.fetchNetworks();
-  if (!networks || networks.length === 0) {
-    console.log('Networks not found');
-    return;
+  public async checkInactiveJobs() {
+    const networks = await this.networkProvider.fetchNetworks();
+    if (!networks || networks.length === 0) {
+      console.log('Networks not found');
+      return;
+    }
+
+    const currentBlock: number = await this.jobProvider.getCurrentBlock();
+    const totalWindowSize = await this.networkProvider.getTotalWindowSize();
+    const posInCycle = currentBlock % totalWindowSize;
+
+    const relevantNetworks: string[] = [];
+    for (const network of networks) {
+      const window = await this.networkProvider.getWindow(network);
+      if (window.start <= posInCycle && posInCycle < window.start + window.length) {
+        relevantNetworks.push(network);
+      } else if ((posInCycle + BLOCKS_LIMIT) % totalWindowSize >= window.start) {
+        relevantNetworks.push(network);
+      }
+    }
+
+    const workableJobs: Job[] = await this.jobProvider.getWorkableJobs(relevantNetworks);
+
+    for (const job of workableJobs) {
+      const jobState: JobState = await this.jobProvider.getJobState(job.network, job.jobAddress)
+
+      if (job.canWork && !jobState.wasWorkable) {
+        jobState.lastChangeBlock = currentBlock;
+        jobState.wasWorkable = true;
+      }
+
+      if (job.canWork && jobState.wasWorkable && (currentBlock - jobState.lastChangeBlock) >= BLOCKS_LIMIT) {
+        await this.notificationProvider.sendNotification(`Job ${job.jobAddress} has been inactive for 10 blocks in network ${job.network}`);
+        console.log('Send discord notification');
+      }
+
+      if (!job.canWork && jobState.wasWorkable) {
+        jobState.wasWorkable = false;
+        jobState.lastChangeBlock = currentBlock;
+      }
+      await this.jobProvider.setJobState(job.network, job.jobAddress, jobState)
+    }
+
+    return workableJobs;
   }
 
-  const currentBlock: number = await this.jobProvider.getCurrentBlock();
-  const totalWindowSize = await this.networkProvider.getTotalWindowSize();
-  const posInCycle = currentBlock % totalWindowSize;
-
-  const relevantNetworks: string[] = [];
-  for (const network of networks) {
-    const window = await this.networkProvider.getWindow(network);
-    if (window.start <= posInCycle && posInCycle < window.start + window.length) {
-      relevantNetworks.push(network);
-    } else if ((posInCycle + BLOCKS_LIMIT) % totalWindowSize >= window.start) {
-      relevantNetworks.push(network);
-    }
-  }
-
-  const workableJobs: Job[] = await this.jobProvider.getWorkableJobs(relevantNetworks);
-
-  for (const job of workableJobs) {
-    const jobState: JobState = await this.jobProvider.getJobState(job.network, job.jobAddress)
-
-    if (job.canWork && !jobState.wasWorkable) {
-      jobState.lastChangeBlock = currentBlock;
-      jobState.wasWorkable = true;
-    }
-
-    if (job.canWork && jobState.wasWorkable && (currentBlock - jobState.lastChangeBlock) >= BLOCKS_LIMIT) {
-      await this.notificationProvider.sendNotification(`Job ${job.jobAddress} has been inactive for 10 blocks in network ${job.network}`);
-      console.log('Send discord notification');
-    }
-
-    if (!job.canWork && jobState.wasWorkable) {
-      jobState.wasWorkable = false;
-      jobState.lastChangeBlock = currentBlock;
-    }
-    await this.jobProvider.setJobState(job.network, job.jobAddress, jobState)
-  }
-
-  return workableJobs;
-}
-  
 }

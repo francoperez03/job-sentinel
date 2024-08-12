@@ -1,9 +1,17 @@
+import Redis from 'ioredis';
 import { jobAbi } from '../../abis/job.abi';
 import { sequencerAbi } from '../../abis/sequencer.abi';
 import { JobProvider } from '../../providers/jobs.provider';
 import { ethers, Contract, JsonRpcProvider } from 'ethers';
 
 jest.mock('ethers');
+jest.mock('ioredis', () => {
+  const RedisMock = jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    setex: jest.fn(),
+  }));
+  return RedisMock;
+});
 
 describe('JobProvider', () => {
   const BLOCK_NUMBER = 1234
@@ -13,6 +21,7 @@ describe('JobProvider', () => {
   let mockSequencerContract: jest.Mocked<Contract>;
   let mockJobContract: jest.Mocked<Contract>;
   let mockProvider: jest.Mocked<JsonRpcProvider>
+  let redisClient: jest.Mocked<Redis>;
 
   beforeAll(() => {
     mockSequencerContract = {
@@ -40,6 +49,12 @@ describe('JobProvider', () => {
     (ethers.JsonRpcProvider as jest.Mock).mockReturnValue(mockProvider);
 
     jobProvider = new JobProvider();
+    redisClient = new Redis() as jest.Mocked<Redis>;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    redisClient.get.mockResolvedValueOnce(null);
   });
 
   it('should fetch jobs correctly', async () => {

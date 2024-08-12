@@ -1,7 +1,14 @@
+import Redis from 'ioredis';
 import { NetworkProvider } from '../../providers/networks.provider';
 import { ethers, Contract } from 'ethers';
-
 jest.mock('ethers');
+jest.mock('ioredis', () => {
+  const RedisMock = jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    setex: jest.fn(),
+  }));
+  return RedisMock;
+});
 
 describe('NetworkProvider', () => {
   const NUM_NETWORKS = 4
@@ -10,8 +17,10 @@ describe('NetworkProvider', () => {
   const TOTAL_WINDOWS_SIZE = 48
   let networkProvider: NetworkProvider;
   let mockContract: jest.Mocked<Contract>;
+  let redisClient: jest.Mocked<Redis>;
 
   beforeAll(() => {
+    
     mockContract = {
       numNetworks: jest.fn(),
       networkAt: jest.fn(),
@@ -21,8 +30,13 @@ describe('NetworkProvider', () => {
     } as unknown as jest.Mocked<Contract>;
 
     (ethers.Contract as jest.Mock).mockImplementation(() => mockContract);
-
+    redisClient = new Redis() as jest.Mocked<Redis>;
     networkProvider = new NetworkProvider();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    redisClient.get.mockResolvedValueOnce(null);
   });
 
   it('should fetch networks correctly', async () => {

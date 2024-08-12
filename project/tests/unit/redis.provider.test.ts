@@ -1,5 +1,5 @@
-import { JobProvider } from '../../providers/jobs.provider';
 import Redis from 'ioredis';
+import { JobProvider } from '../../providers/jobs.provider';
 
 describe('Redis Cache', () => {
   let jobProvider: JobProvider;

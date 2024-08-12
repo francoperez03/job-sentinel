@@ -1,12 +1,20 @@
+import Redis from 'ioredis';
 import { JobService } from '../../services/jobs.service';
 import { JobProvider } from '../../providers/jobs.provider';
 import { NetworkProvider } from '../../providers/networks.provider';
 import { DiscordProvider } from '../../providers/discord.provider';
+import { JobState, Window } from '../../types';
 
-// Mock dependencies
 jest.mock('../../providers/jobs.provider');
 jest.mock('../../providers/networks.provider');
 jest.mock('../../providers/discord.provider');
+jest.mock('ioredis', () => {
+  const RedisMock = jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    setex: jest.fn(),
+  }));
+  return RedisMock;
+});
 
 describe('JobService', () => {
   const CURRENT_BLOCK = 100;
@@ -16,6 +24,7 @@ describe('JobService', () => {
   let jobProvider: jest.Mocked<JobProvider>;
   let networkProvider: jest.Mocked<NetworkProvider>;
   let notificationProvider: jest.Mocked<DiscordProvider>;
+  let redisClient: jest.Mocked<Redis>;
 
   beforeAll(() => {
     jobProvider = new JobProvider() as jest.Mocked<JobProvider>;
@@ -23,24 +32,23 @@ describe('JobService', () => {
     notificationProvider = new DiscordProvider() as jest.Mocked<DiscordProvider>;
 
     jobService = new JobService(networkProvider, jobProvider, notificationProvider);
-
+    redisClient = new Redis() as jest.Mocked<Redis>;
     jobProvider.getCurrentBlock.mockResolvedValue(CURRENT_BLOCK);
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jobService['jobStates'] = {};
+    redisClient.get.mockResolvedValueOnce(null);
+    networkProvider.getWindow.mockResolvedValue({ start: 0, length: 20 } as Window);
   });
 
   it('should send a notification if a job is inactive for 10 blocks', async () => {
-    jobService['jobStates'] = {
-      job1: { lastChangeBlock: MORE_THAN_10_BLOCKS_AGO, wasWorkable: true }
-    };
+    const jobState: JobState = { lastChangeBlock: MORE_THAN_10_BLOCKS_AGO, wasWorkable: true };
+    jobProvider.getJobState.mockResolvedValue(jobState);
     networkProvider.fetchNetworks.mockResolvedValue(['network1']);
     jobProvider.getWorkableJobs.mockResolvedValue([
       { jobAddress: 'job1', canWork: true, network: 'network1' },
     ]);
-
 
     await jobService.checkInactiveJobs();
 
@@ -50,14 +58,12 @@ describe('JobService', () => {
   });
 
   it('should not send a notification if a job is not inactive for 10 blocks', async () => {
-    jobService['jobStates'] = {
-      job1: { lastChangeBlock: LESS_THAN_10_BLOCKS_AGO, wasWorkable: true }
-    };
+    const jobState: JobState = { lastChangeBlock: LESS_THAN_10_BLOCKS_AGO, wasWorkable: true };
+    jobProvider.getJobState.mockResolvedValue(jobState);
     networkProvider.fetchNetworks.mockResolvedValue(['network1']);
     jobProvider.getWorkableJobs.mockResolvedValue([
       { jobAddress: 'job1', canWork: true, network: 'network1' },
     ]);
-
 
     await jobService.checkInactiveJobs();
 
@@ -65,19 +71,19 @@ describe('JobService', () => {
   });
 
   it('should update job state when canWork changes from true to false', async () => {
-    jobService['jobStates'] = {
-      job1: { lastChangeBlock: LESS_THAN_10_BLOCKS_AGO, wasWorkable: true }
-    };
+    const jobState: JobState = { lastChangeBlock: LESS_THAN_10_BLOCKS_AGO, wasWorkable: true };
+    jobProvider.getJobState.mockResolvedValue(jobState);
     networkProvider.fetchNetworks.mockResolvedValue(['network1']);
     jobProvider.getWorkableJobs.mockResolvedValue([
       { jobAddress: 'job1', canWork: false, network: 'network1' },
     ]);
 
-
     await jobService.checkInactiveJobs();
 
-    expect(jobService['jobStates']['job1'].wasWorkable).toBe(false);
-    expect(jobService['jobStates']['job1'].lastChangeBlock).toBe(CURRENT_BLOCK);
+    expect(jobProvider.setJobState).toHaveBeenCalledWith('network1', 'job1', {
+      wasWorkable: false,
+      lastChangeBlock: CURRENT_BLOCK,
+    });
     expect(notificationProvider.sendNotification).not.toHaveBeenCalled();
   });
 
@@ -109,6 +115,8 @@ describe('JobService', () => {
   });
 
   it('should initialize state correctly when a new job is found', async () => {
+    const jobState: JobState = { lastChangeBlock: CURRENT_BLOCK, wasWorkable: false };
+    jobProvider.getJobState.mockResolvedValue(jobState);
     networkProvider.fetchNetworks.mockResolvedValue(['network1']);
     jobProvider.getWorkableJobs.mockResolvedValue([
       { jobAddress: 'job2', canWork: true, network: 'network1' },
@@ -116,21 +124,25 @@ describe('JobService', () => {
 
     await jobService.checkInactiveJobs();
 
-    expect(jobService['jobStates']['job2'].wasWorkable).toBe(true);
-    expect(jobService['jobStates']['job2'].lastChangeBlock).toBe(CURRENT_BLOCK);
+    expect(jobProvider.setJobState).toHaveBeenCalledWith('network1', 'job2', {
+      wasWorkable: true,
+      lastChangeBlock: CURRENT_BLOCK,
+    });
   });
 
   it('should handle multiple jobs and networks correctly', async () => {
-    jobService['jobStates'] = {
-      job1: { lastChangeBlock: MORE_THAN_10_BLOCKS_AGO, wasWorkable: true },
-      job2: { lastChangeBlock: LESS_THAN_10_BLOCKS_AGO, wasWorkable: true }
-    };
+    const jobState1: JobState = { lastChangeBlock: MORE_THAN_10_BLOCKS_AGO, wasWorkable: true };
+    const jobState2: JobState = { lastChangeBlock: LESS_THAN_10_BLOCKS_AGO, wasWorkable: true };
+    jobProvider.getJobState.mockImplementation((network, jobAddress) => {
+      if (jobAddress === 'job1') return Promise.resolve(jobState1);
+      if (jobAddress === 'job2') return Promise.resolve(jobState2);
+      return Promise.resolve({ lastChangeBlock: CURRENT_BLOCK, wasWorkable: false });
+    });
     networkProvider.fetchNetworks.mockResolvedValue(['network1', 'network2']);
     jobProvider.getWorkableJobs.mockResolvedValue([
       { jobAddress: 'job1', canWork: true, network: 'network1' },
       { jobAddress: 'job2', canWork: false, network: 'network2' },
     ]);
-
 
     await jobService.checkInactiveJobs();
 
@@ -141,6 +153,9 @@ describe('JobService', () => {
       'Job job2 has been inactive for 10 blocks in network network2'
     );
 
-    expect(jobService['jobStates']['job2'].wasWorkable).toBe(false);
+    expect(jobProvider.setJobState).toHaveBeenCalledWith('network2', 'job2', {
+      wasWorkable: false,
+      lastChangeBlock: CURRENT_BLOCK,
+    });
   });
 });
