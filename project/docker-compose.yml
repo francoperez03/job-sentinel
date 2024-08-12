@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    container_name: my-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - lambda-local
+
+networks:
+  lambda-local:
+    name: lambda-local
+    driver: bridge
