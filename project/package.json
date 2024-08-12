@@ -10,7 +10,7 @@
     "unit": "jest",
     "lint": "eslint '*.ts' --quiet --fix",
     "compile": "tsc",
-    "test": "npm run compile && npm run unit",
+    "test": "npm run unit",
     "check:job": "cd .. && sam local invoke \"CheckJobInactivityFunction\" --profile localstack --event events/event.json"
   },
   "dependencies": {
@@ -26,6 +26,7 @@
     "@types/aws-lambda": "^8.10.92",
     "@types/jest": "^29.2.0",
     "@types/node": "^20.5.7",
+    "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
     "eslint": "^8.8.0",
