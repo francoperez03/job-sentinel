@@ -1,7 +1,8 @@
-import { sequencerAbi } from '../abis/sequencer.abi';
 import { ethers, Contract, hexlify } from 'ethers';
+import Redis from 'ioredis';
+import { sequencerAbi } from '../abis/sequencer.abi';
 import { jobAbi } from '../abis/job.abi';
-import { Job, JobState, JobStates } from '../types';
+import { Job, JobState } from '../types';
 import { IJobProvider } from '../interfaces/providers.interface';
 
 const FULFILLED = 'fulfilled';
@@ -10,14 +11,15 @@ export class JobProvider implements IJobProvider {
 
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
-  private jobStates: JobStates = {};
-
+  private redisClient: Redis;
 
   constructor() {
     const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
-    const sequencerAddress = process.env.SEQUENCER_ADDRESS || 'default';
+    const sequencerAddress = process.env.SEQUENCER_ADDRESS || '0x238b4E35dAed6100C6162fAE4510261f88996EC9';
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.provider = new ethers.JsonRpcProvider(providerUrl);
     this.sequencerContract = new ethers.Contract(sequencerAddress, sequencerAbi, this.provider);
+    this.redisClient = new Redis(redisUrl);
   }
 
   private async checkIsWorkable(network: string, jobAddress: string): Promise<[boolean, string | null]> {
@@ -96,15 +98,18 @@ export class JobProvider implements IJobProvider {
 
   public async setJobState(network: string, jobAddress: string, state: JobState): Promise<void> {
     const jobKey = `${jobAddress}-${network}`;
-    this.jobStates[jobKey] = state;
+    await this.redisClient.set(jobKey, JSON.stringify(state));
   }
 
   public async getJobState(network: string, jobAddress: string): Promise<JobState> {
     const jobKey = `${jobAddress}-${network}`;
-    if(this.jobStates[jobKey]){
-      return this.jobStates[jobKey]
+    const cachedState = await this.redisClient.get(jobKey);
+    if (cachedState) {
+      return JSON.parse(cachedState);
     }
     const blockNumber = await this.provider.getBlockNumber();
-    return { lastChangeBlock: blockNumber, wasWorkable: false };
+    const initialState = { lastChangeBlock: blockNumber, wasWorkable: false };
+    await this.setJobState(network, jobAddress, initialState);
+    return initialState;
   }
 }
