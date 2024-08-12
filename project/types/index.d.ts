@@ -14,6 +14,4 @@ export interface JobState {
   wasWorkable: boolean;
 }
 
-export interface JobStates {
-  [jobAddress: string]: JobState;
-}
+export type JobStates = Record<string, { lastChangeBlock: number, wasWorkable: boolean }>

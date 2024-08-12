@@ -1,7 +1,7 @@
 import { sequencerAbi } from '../abis/sequencer.abi';
 import { ethers, Contract, hexlify } from 'ethers';
 import { jobAbi } from '../abis/job.abi';
-import { Job } from '../types';
+import { Job, JobState, JobStates } from '../types';
 import { IJobProvider } from '../interfaces/providers.interface';
 
 const FULFILLED = 'fulfilled';
@@ -10,6 +10,8 @@ export class JobProvider implements IJobProvider {
 
   private provider: ethers.JsonRpcProvider;
   private sequencerContract: Contract;
+  private jobStates: JobStates = {};
+
 
   constructor() {
     const providerUrl = process.env.RPC_PROVIDER || 'https://rpc.ankr.com/eth';
@@ -19,9 +21,13 @@ export class JobProvider implements IJobProvider {
   }
 
   private async checkIsWorkable(network: string, jobAddress: string): Promise<[boolean, string | null]> {
+    const jobKey = `${jobAddress}-${network}`;
+    let canWork = false;
+    let args = null;
+
     try {
       const jobContract = new ethers.Contract(jobAddress, jobAbi, this.provider);
-      const [canWork, args] = await jobContract.workable(network);
+      [canWork, args] = await jobContract.workable(network);
       return [canWork, args];
     } catch (error) {
       console.error(`Error checking if job ${jobAddress} is workable on network ${network}:`, (error as Error).message);
@@ -86,5 +92,19 @@ export class JobProvider implements IJobProvider {
       console.log('Error retrieving block:', (error as Error).message);
       throw error;
     }
+  }
+
+  public async setJobState(network: string, jobAddress: string, state: JobState): Promise<void> {
+    const jobKey = `${jobAddress}-${network}`;
+    this.jobStates[jobKey] = state;
+  }
+
+  public async getJobState(network: string, jobAddress: string): Promise<JobState> {
+    const jobKey = `${jobAddress}-${network}`;
+    if(this.jobStates[jobKey]){
+      return this.jobStates[jobKey]
+    }
+    const blockNumber = await this.provider.getBlockNumber();
+    return { lastChangeBlock: blockNumber, wasWorkable: false };
   }
 }
