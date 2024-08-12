@@ -20,17 +20,7 @@ This project is an implementation of an automated alert system for MakerDAO, dev
 - **Axios** to send HTTP requests to Discord
 - **dotenv** to manage environment variables
 
-## Setup
-
-### Environment Variables
-
-Create a `.env` file in the root of the project and define the following variables:
-```bash
-INFURA_URL=<Your_RPC_Provider_URL>
-SEQUENCER_ADDRESS=<Sequencer_Contract_Address>
-DISCORD_WEBHOOK_URL=<Discord_Webhook_URL>
-```
-
+## Local Setup
 
 ### Install Dependencies
 
@@ -38,6 +28,27 @@ Run the following command to install the necessary dependencies:
 
 ```bash
 npm install
+```
+
+### Docker Configuration
+ 
+#### Prerequisites
+Docker
+
+##### Starting the Redis Server
+To start the Redis server, navigate to the directory containing your docker-compose.yml file and run:
+
+```bash
+docker-compose up -d
+```
+
+This command will download the Redis image if not already present, and start a Redis container linked to the lambda-local network.
+
+##### Stopping the Redis Server
+To stop the Redis server and remove the containers, use:
+
+```bash
+docker-compose down
 ```
 
 ## Deployment to AWS Lambda
