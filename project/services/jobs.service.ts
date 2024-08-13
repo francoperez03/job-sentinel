@@ -51,7 +51,8 @@ export class JobService {
       const window = await this.networkProvider.getWindow(network);
       if (window.start <= posInCycle && posInCycle < window.start + window.length) {
         relevantNetworks.push(network);
-      } else if ((posInCycle + BLOCKS_LIMIT) % totalWindowSize >= window.start) {
+      } 
+      else if (posInCycle < window.start && (posInCycle + BLOCKS_LIMIT) >= window.start)  {
         relevantNetworks.push(network);
       }
     }
